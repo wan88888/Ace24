@@ -51,6 +51,10 @@ export class PlayScene extends Phaser.Scene {
   private renderedLevelId = -1;
   private numbersY = 470;
 
+  private skipContainer!: Phaser.GameObjects.Container;
+  private hintContainer!: Phaser.GameObjects.Container;
+  private logHintText!: Phaser.GameObjects.Text;
+
   private successLayer!: Phaser.GameObjects.Container;
   private successPanel!: Phaser.GameObjects.Container;
   private successTitleText!: Phaser.GameObjects.Text;
@@ -79,8 +83,10 @@ export class PlayScene extends Phaser.Scene {
     this.drawPaperBackdrop(width, height);
     this.buildTopArea(width);
     this.buildWorldActors(width);
+    this.buildUndoClearButtons(width);
     this.buildOperatorButtons(width, this.engine.getSnapshot().operatorSymbols);
     this.buildBottomButtons(width, height);
+    this.buildLogHintText(width);
     this.buildSuccessModal(width, height);
 
     this.syncView();
@@ -99,6 +105,17 @@ export class PlayScene extends Phaser.Scene {
     this.levelText.setText(`LEVEL ${snapshot.level.id}`);
     this.currentValueText.setText(snapshot.movesUsed === 0 ? '' : String(snapshot.value));
     this.expressionText.setText(snapshot.expression);
+
+    // HINT/SKIP disabled visual state
+    const canSkip = !this.modalOpen && snapshot.beans >= snapshot.skipCost;
+    const canHint = !this.modalOpen && snapshot.beans >= snapshot.hintCost;
+    this.skipContainer.setAlpha(canSkip ? 1 : 0.42);
+    this.hintContainer.setAlpha(canHint ? 1 : 0.42);
+
+    // Log hint text visibility
+    this.logHintText.setVisible(
+      !this.modalOpen && snapshot.operatorSymbols.includes('log')
+    );
 
     const used = new Set(snapshot.usedNumberIndices);
 
@@ -447,6 +464,78 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
+  private buildUndoClearButtons(width: number): void {
+    const undoBtn = this.createSquareIconButton(
+      width / 2 - 180, 400, '↩',
+      () => {
+        if (this.modalOpen) return;
+        const result = this.engine.undo();
+        this.syncView(result.message, result.ok ? 'neutral' : 'error');
+      }
+    );
+
+    const clearBtn = this.createSquareIconButton(
+      width / 2 + 180, 400, '✕',
+      () => {
+        if (this.modalOpen) return;
+        const result = this.engine.clearMoves();
+        this.syncView(result.message, result.ok ? 'neutral' : 'error');
+      }
+    );
+
+    this.add.existing(undoBtn);
+    this.add.existing(clearBtn);
+  }
+
+  private buildLogHintText(width: number): void {
+    this.logHintText = this.add
+      .text(width / 2, 1078, 'log X  =  log₁₀(X)', {
+        fontFamily: '"Patrick Hand", "Noto Sans SC", sans-serif',
+        fontSize: '30px',
+        color: '#888888',
+        stroke: '#f4f4f0',
+        strokeThickness: 4
+      })
+      .setOrigin(0.5)
+      .setVisible(false);
+  }
+
+  private createSquareIconButton(
+    x: number,
+    y: number,
+    icon: string,
+    onClick: () => void
+  ): Phaser.GameObjects.Container {
+    const bg = this.add.graphics();
+    bg.fillStyle(0xf4f4f4, 1);
+    bg.lineStyle(4, 0x444444, 1);
+    bg.fillRoundedRect(-30, -30, 60, 60, 12);
+    bg.strokeRoundedRect(-30, -30, 60, 60, 12);
+
+    const label = this.add
+      .text(0, 0, icon, {
+        fontFamily: '"Baloo 2", "Noto Sans SC", sans-serif',
+        fontSize: '30px',
+        color: '#444444'
+      })
+      .setOrigin(0.5);
+
+    const container = this.add.container(x, y, [bg, label]);
+    container.setSize(60, 60);
+    container.setInteractive({ useHandCursor: true });
+
+    container.on('pointerdown', onClick);
+    container.on('pointerover', () => {
+      if (this.modalOpen) return;
+      this.tweens.add({ targets: container, scale: 1.06, duration: 100 });
+    });
+    container.on('pointerout', () => {
+      this.tweens.add({ targets: container, scale: 1, duration: 100 });
+    });
+
+    return container;
+  }
+
   private buildBottomButtons(width: number, height: number): void {
     const skipButton = this.createBottomButton({
       x: width / 2 - 130,
@@ -479,6 +568,9 @@ export class PlayScene extends Phaser.Scene {
         this.syncView(result.message, result.ok ? 'neutral' : 'error');
       }
     });
+
+    this.skipContainer = skipButton;
+    this.hintContainer = hintButton;
 
     this.add.existing(skipButton);
     this.add.existing(hintButton);

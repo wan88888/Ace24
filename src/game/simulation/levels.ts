@@ -1,6 +1,8 @@
 import type { LevelSpec } from './types';
+import { makePrng, randInt } from './utils/prng';
+import { TIER_SIZE, TARGET } from './constants';
 
-const TARGET = 24;
+type Rng = ReturnType<typeof makePrng>;
 
 const level = (
   id: number,
@@ -16,9 +18,6 @@ const level = (
   allowedOperators
 });
 
-const TIER_SIZE = 10;
-
-type Rng = () => number;
 type Candidate = {
   numbers: number[];
   hint: string;
@@ -32,19 +31,6 @@ const OPS_TIER_6: LevelSpec['allowedOperators'] = ['+', '-', '*', '/', '(', ')',
 const OPS_TIER_7: LevelSpec['allowedOperators'] = ['+', '-', '*', '/', '(', ')', 'sqrt', '^'];
 const OPS_TIER_8: LevelSpec['allowedOperators'] = ['+', '-', '*', '/', '(', ')', 'sqrt', '^', 'log'];
 const OPS_TIER_9: LevelSpec['allowedOperators'] = ['+', '-', '*', '/', '(', ')', 'sqrt', '^', 'log', '!'];
-
-const makePrng = (seed: number): Rng => {
-  let state = seed >>> 0;
-
-  return () => {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state / 0x100000000;
-  };
-};
-
-const randInt = (rng: Rng, min: number, max: number): number => {
-  return min + Math.floor(rng() * (max - min + 1));
-};
 
 const keyOf = (numbers: number[]): string => {
   return [...numbers].sort((a, b) => a - b).join(',');

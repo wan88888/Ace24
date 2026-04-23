@@ -1,5 +1,6 @@
 import { LEVELS } from './levels';
 import { generateLevel } from './levelgen';
+import { TIER_SIZE, TIER_REWARDS } from './constants';
 import type {
   ActionResult,
   GameSnapshot,
@@ -32,8 +33,7 @@ const BINARY_OPERATORS = new Set<OperatorSymbol>(['+', '-', '*', '/', '^']);
 const PREFIX_UNARY_OPERATORS = new Set<OperatorSymbol>(['sqrt', 'log']);
 const POSTFIX_UNARY_OPERATORS = new Set<OperatorSymbol>(['!']);
 const EPSILON = 1e-9;
-const TIER_SIZE = 10;
-const TIER_REWARDS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12];
+const SAVE_KEY = 'ace24_save';
 
 const precedence = (operator: OperatorSymbol): number => {
   if (operator === '+' || operator === '-') {
@@ -97,6 +97,44 @@ export class Ace21Engine {
 
     this.staticLevels = customLevels;
     this.roundState = this.createFreshRoundState();
+    this.loadState();
+  }
+
+  private saveState(): void {
+    try {
+      const data = {
+        beans: this.beans,
+        levelIndex: this.levelIndex,
+        unlockedLevels: this.unlockedLevels,
+        bestStars: Array.from(this.levelBestStars.entries())
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private loadState(): void {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw) as {
+        beans?: number;
+        levelIndex?: number;
+        unlockedLevels?: number;
+        bestStars?: [number, number][];
+      };
+      if (typeof data.beans === 'number') this.beans = data.beans;
+      if (typeof data.levelIndex === 'number') this.levelIndex = data.levelIndex;
+      if (typeof data.unlockedLevels === 'number') this.unlockedLevels = data.unlockedLevels;
+      if (Array.isArray(data.bestStars)) {
+        for (const [id, stars] of data.bestStars) {
+          this.levelBestStars.set(id, stars);
+        }
+      }
+    } catch {
+      // ignore corrupt save data
+    }
   }
 
   private getLevel(index: number): LevelSpec {
@@ -289,6 +327,8 @@ export class Ace21Engine {
       unlockedNext = true;
     }
 
+    this.saveState();
+
     return {
       ok: true,
       message: unlockedNext
@@ -347,6 +387,7 @@ export class Ace21Engine {
 
     this.levelIndex = nextLevelIndex;
     this.roundState = this.createFreshRoundState();
+    this.saveState();
 
     return {
       ok: true,
@@ -359,6 +400,8 @@ export class Ace21Engine {
     if (!paid.ok) {
       return paid;
     }
+
+    this.saveState();
 
     return {
       ok: true,

@@ -180,3 +180,151 @@ body {
     transform: rotate(90deg);
   }
 }
+
+/* ===== Level Select Page ===== */
+
+.levels-page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f1efe7;
+  overflow: hidden;
+}
+
+.levels-page.hidden {
+  display: none;
+}
+
+.levels-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 78px;
+  padding: 14px 18px 10px;
+  flex-shrink: 0;
+}
+
+.levels-title {
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Baloo 2', 'Noto Sans SC', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #3a3a3a;
+}
+
+.levels-back-btn {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border-width: 2px;
+  border-radius: 12px;
+  font-size: 34px;
+}
+
+.levels-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.levels-tier-header {
+  font-family: 'Baloo 2', 'Noto Sans SC', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 6px 2px 2px;
+  border-top: 1px solid #ddd8cc;
+  margin-top: 4px;
+}
+
+.levels-tier-header:first-child {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* The grid row containing 10 cells per tier is implemented by grouping */
+.levels-grid {
+  display: block;
+}
+
+/* Tier rows: wrap cells in a mini-grid using CSS nth-child tricks is complex;
+   instead we use a separate wrapper approach via JS tierHeader divs.
+   Each tier section is: tierHeader + 10 level-cell buttons in a flex row.
+   We make siblings of a tier-header wrap into a grid row. */
+.level-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 52px;
+  border-radius: 10px;
+  border: 2px solid #c5c0b4;
+  background: #f8f8f4;
+  cursor: pointer;
+  font-family: 'Baloo 2', 'Noto Sans SC', sans-serif;
+  gap: 1px;
+  transition: transform 0.12s, box-shadow 0.12s;
+  margin: 3px 2px;
+  vertical-align: middle;
+}
+
+.level-cell:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+
+.level-cell:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.level-cell.current {
+  border-color: #f7dc3c;
+  box-shadow: 0 0 0 2px #f7dc3c;
+}
+
+.level-cell.locked {
+  opacity: 0.38;
+  cursor: default;
+  background: #e8e8e4;
+}
+
+.level-cell.cleared {
+  background: #fffbea;
+  border-color: #e8c832;
+}
+
+.level-num {
+  font-size: 14px;
+  font-weight: 700;
+  color: #3a3a3a;
+  line-height: 1;
+}
+
+.level-stars {
+  font-size: 9px;
+  color: #b89a10;
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+
+.level-cell.locked .level-num {
+  color: #999;
+}
+
+.level-cell.locked .level-stars {
+  color: #bbb;
+}
